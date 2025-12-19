@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Dodaj zawodnika{% endblock %}
+
+{% block content %}
+<h2>Dodaj zawodnika</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    <label>Nazwisko:</label><br>
+    <input type="text" name="name" required><br><br>
+
+    <label>Numer:</label><br>
+    <input type="number" name="number" required><br><br>
+
+    <label>Zdjęcie:</label><br>
+    <input type="file" name="photo" accept="image/*" required><br><br>
+
+    <button type="submit">Dodaj zawodnika</button>
+</form>
+
+<hr>
+
+<h3>Dodani zawodnicy</h3>
+
+<ul>
+{% for p in players %}
+<div class="player-row">
+    <img src="{{ url_for('uploaded_file', filename=p[3]) }}" class="player-thumb">
+
+    <span>{{ p[1] }} #{{ p[2] }}</span>
+
+    <form method="POST"
+          action="{{ url_for('delete_player', player_id=p[0]) }}"
+          onsubmit="return confirm('Usunąć tego zawodnika?');"
+          style="display:inline;">
+        <button type="submit" class="delete-btn">Usuń</button>
+    </form>
+</div>
+{% endfor %}
+</ul>
+{% endblock %}

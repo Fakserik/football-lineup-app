@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Skład{% endblock %}
+
+{% block content %}
+<h2>Skład meczowy</h2>
+
+<div class="lineup-layout">
+
+    <!-- ===== LISTA ZAWODNIKÓW ===== -->
+    <div class="players-list">
+        <h3>Zawodnicy</h3>
+
+        {% for p in players %}
+        <div class="player-container"
+             draggable="true"
+             data-player-id="{{ p[0] }}">
+
+            <div class="player-wrapper">
+                <div class="player-label">
+                    {{ p[1] }} #{{ p[2] }}
+                </div>
+
+                <img src="{{ url_for('uploaded_file', filename=p[3]) }}"
+                     class="player-img">
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== PRAWA STRONA ===== -->
+    <div>
+
+        <!-- ===== PANEL AKCJI ===== -->
+        <div class="lineup-controls">
+            <button onclick="resetLineup()">Reset składu</button>
+            <button onclick="setFormation('442')">4-4-2</button>
+            <button onclick="setFormation('433')">4-3-3</button>
+            <button onclick="exportPNG()">Eksport PNG</button>
+        </div>
+
+        <!-- ===== BOISKO ===== -->
+        <div id="pitch-container">
+            <img src="{{ url_for('static', filename='pitch.png') }}" id="pitch">
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== HTML2CANVAS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+let draggedFromList = null;
+let selectedPlayer = null;
+let offsetX = 0;
+let offsetY = 0;
+let snapPoints = [];
+
+const playersList = document.querySelector('.players-list');
+const pitch = document.getElementById('pitch-container');
+
+/* =====================================================
+   DRAG Z LISTY → NA BOISKO
+===================================================== */
+document.querySelectorAll('.player-container').forEach(player => {
+    player.addEventListener('dragstart', () => {
+        draggedFromList = player;
+    });
+});
+
+pitch.addEventListener('dragover', e => e.preventDefault());
+
+pitch.addEventListener('drop', e => {
+    e.preventDefault();
+    if (!draggedFromList) return;
+
+    const pitchRect = pitch.getBoundingClientRect();
+
+    // pozycja zawodnika (lewy górny róg)
+    let playerX = e.clientX - pitchRect.left - draggedFromList.offsetWidth / 2;
+    let playerY = e.clientY - pitchRect.top - draggedFromList.offsetHeight / 2;
+
+    // środek zawodnika
+    let playerCenterX = playerX + draggedFromList.offsetWidth / 2;
+    let playerCenterY = playerY + draggedFromList.offsetHeight / 2;
+
+    let closest = null;
+    let minDist = Infinity;
+
+    snapPoints.forEach(p => {
+        let d = Math.hypot(p.x - playerCenterX, p.y - playerCenterY);
+        if (d < minDist) {
+            minDist = d;
+            closest = p;
+        }
+    });
+
+    draggedFromList.style.position = 'absolute';
+
+    if (closest && minDist < 100) {
+        // IDEALNE WYŚRODKOWANIE
+        draggedFromList.style.left =
+            (closest.x - draggedFromList.offsetWidth / 2) + 'px';
+        draggedFromList.style.top =
+            (closest.y - draggedFromList.offsetHeight / 2) + 'px';
+    } else {
+        // brak snapu → normalny drop
+        draggedFromList.style.left = playerX + 'px';
+        draggedFromList.style.top = playerY + 'px';
+    }
+
+    pitch.appendChild(draggedFromList);
+    draggedFromList = null;
+});
+
+
+/* =====================================================
+   PRECYZYJNE PRZESUWANIE NA BOISKU (MYSZ)
+===================================================== */
+pitch.addEventListener('mousedown', e => {
+    const player = e.target.closest('.player-container');
+    if (!player || !pitch.contains(player)) return;
+
+    selectedPlayer = player;
+
+    const rect = player.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    document.addEventListener('mousemove', movePlayer);
+    document.addEventListener('mouseup', stopMove);
+});
+
+function movePlayer(e) {
+    if (!selectedPlayer) return;
+
+    const pitchRect = pitch.getBoundingClientRect();
+
+    let x = e.clientX - pitchRect.left - offsetX;
+    let y = e.clientY - pitchRect.top - offsetY;
+
+    selectedPlayer.style.left = x + 'px';
+    selectedPlayer.style.top = y + 'px';
+}
+
+function stopMove() {
+    document.removeEventListener('mousemove', movePlayer);
+    document.removeEventListener('mouseup', stopMove);
+    selectedPlayer = null;
+}
+
+/* =====================================================
+   RESET SKŁADU
+===================================================== */
+function resetLineup() {
+    document.querySelectorAll('.snap-point').forEach(p => p.remove());
+    snapPoints = [];
+
+    document.querySelectorAll('#pitch-container .player-container')
+        .forEach(player => {
+            player.style.position = 'static';
+            playersList.appendChild(player);
+        });
+}
+
+/* =====================================================
+   FORMACJE → TYLKO SNAP POINTY
+===================================================== */
+function setFormation(type) {
+    document.querySelectorAll('.snap-point').forEach(p => p.remove());
+    snapPoints = [];
+
+    let positions = [];
+
+    if (type === '442') {
+        positions = [
+            [265, 720],
+            [65, 580], [200, 580], [330, 580], [460, 580],
+            [65, 380], [200, 380], [330, 380], [460, 380],
+            [200, 180], [330, 180]
+        ];
+    }
+
+    if (type === '433') {
+        positions = [
+            [265, 720],
+            [60, 580], [180, 580], [320, 580], [460, 580],
+            [160, 400], [260, 350], [360, 400],
+            [80, 200], [260, 150], [440, 200]
+        ];
+    }
+
+    positions.forEach(pos => {
+        const box = document.createElement('div');
+        box.className = 'snap-point';
+        box.style.left = pos[0] + 'px';
+        box.style.top = pos[1] + 'px';
+        pitch.appendChild(box);
+
+        // ZAPISUJEMY ŚRODEK OKIENKA
+        snapPoints.push({
+            x: pos[0] + 30,
+            y: pos[1] + 30
+        });
+    });
+}
+
+/* =====================================================
+   EKSPORT PNG (BEZ SNAP POINTÓW)
+===================================================== */
+function exportPNG() {
+    document.querySelectorAll('.snap-point')
+        .forEach(p => p.style.display = 'none');
+
+    html2canvas(pitch).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'sklad.png';
+        link.href = canvas.toDataURL();
+        link.click();
+
+        document.querySelectorAll('.snap-point')
+            .forEach(p => p.style.display = 'block');
+    });
+}
+</script>
+{% endblock %}

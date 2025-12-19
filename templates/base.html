@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Panel{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ===== BELKA GÓRNA ===== -->
+<nav class="topbar">
+    <span class="logo">⚽ Football Lineup</span>
+
+    <div class="topbar-center">
+        <a href="{{ url_for('add_player') }}">Dodaj zawodnika</a>
+        <a href="{{ url_for('lineup') }}">Skład</a>
+        <a href="{{ url_for('logout') }}">Wyloguj</a>
+    </div>
+</nav>
+
+
+<!-- ===== TREŚĆ STRONY ===== -->
+<div class="page-content">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>
