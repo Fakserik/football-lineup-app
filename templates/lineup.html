@@ -115,6 +115,37 @@ pitch.addEventListener('drop', e => {
     draggedFromList = null;
 });
 
+pitch.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    const player = e.target.closest('.player-container');
+    if (!player) return;
+
+    selectedPlayer = player;
+
+    const rect = player.getBoundingClientRect();
+    offsetX = touch.clientX - rect.left;
+    offsetY = touch.clientY - rect.top;
+});
+
+pitch.addEventListener('touchmove', e => {
+    if (!selectedPlayer) return;
+
+    const touch = e.touches[0];
+    const pitchRect = pitch.getBoundingClientRect();
+
+    selectedPlayer.style.left =
+        (touch.clientX - pitchRect.left - offsetX) + 'px';
+    selectedPlayer.style.top =
+        (touch.clientY - pitchRect.top - offsetY) + 'px';
+
+    e.preventDefault(); // bardzo ważne!
+});
+
+pitch.addEventListener('touchend', () => {
+    selectedPlayer = null;
+});
+
+
 
 /* =====================================================
    PRECYZYJNE PRZESUWANIE NA BOISKU (MYSZ)

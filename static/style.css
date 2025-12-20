@@ -31,6 +31,7 @@ a {
 
 .player-container {
     cursor: grab;
+    min-width: 80px;
 }
 
 .player-container:active {
@@ -46,7 +47,6 @@ a {
 
 /* ===== BELKA GÓRNA ===== */
 .topbar {
-    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -61,6 +61,7 @@ a {
     padding: 0 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     z-index: 1000;
+    position: sticky;
 }
 
 .topbar a {
@@ -102,17 +103,24 @@ a {
 /* ===== UKŁAD SKŁADU ===== */
 .lineup-layout {
     display: flex;
-    gap: 30px;
+    gap: 20px;
 }
+
+@media (max-width: 768px) {
+    .lineup-layout {
+        flex-direction: column;
 
 /* ===== LISTA ZAWODNIKÓW ===== */
 .players-list {
-    width: 220px;
+    width: 100%;
     background: #f5f5f5;
     padding: 10px;
     border-radius: 8px;
     overflow-y: auto;
-    max-height: 600px;
+    overflow-x: auto;
+    max-height: 180px;
+    display: flex;
+    gap: 10px;
 }
 
 .players-list h3 {
@@ -139,13 +147,14 @@ a {
 
 /* ===== BOISKO ===== */
 #pitch-container {
+    width: 100%;
+    max-width: 420px;
+    margin: auto;
     position: relative;
-    width: 600px;
-    height: auto;
-}
 
 #pitch {
     width: 100%;
+    height: auto;
 }
 
 .lineup-controls {
@@ -155,9 +164,12 @@ a {
 }
 
 .lineup-controls button {
-    padding: 6px 10px;
-    cursor: pointer;
+    padding: 12px 16px;
+    font-size: 16px;
+    margin: 4px;
+    border-radius: 10px;
 }
+
 
 .player-row {
     display: flex;
